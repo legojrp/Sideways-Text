@@ -92,11 +92,58 @@ main {
   gap: 12px;
 }
 
+@media (max-width: 720px) {
+  .converter {
+    flex-direction: column;
+  }
+  .output-controls {
+    justify-content: flex-start;
+  }
+  .sideways-preview {
+    overflow-x: auto;
+  }
+}
+
 .pane {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
+
+.pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.pane-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.sr-only { 
+  position: absolute; 
+  width: 1px; 
+  height: 1px; 
+  padding: 0; 
+  margin: -1px; 
+  overflow: hidden; 
+  clip: rect(0,0,0,0); 
+  white-space: nowrap; 
+  border: 0; 
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+footer a { color: var(--text-h); }
+footer code { font-family: var(--mono); }
 
 label {
   text-align: left;
@@ -160,6 +207,25 @@ textarea {
 .sideways-preview.empty {
   color: var(--text);
   padding: 8px;
+}
+
+.output-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.copy-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+}
+.copy-msg {
+  font-family: var(--mono);
+  color: var(--text);
 }
 
 .mapping {

@@ -42,7 +42,7 @@ function getSidewaysColumns(input, mapping) {
 }
 
 export default function App() {
-  const [input, setInput] = useState('Hello, Sideways!')
+  const [input, setInput] = useState('Hello! \nThis is some \nsideways text. \nUsing Unicode \nWORKS WITH CAPS TOO! ')
   const [mode, setMode] = useState('sideways') // 'sideways' or 'upside-down'
 
   const mapping = useMemo(() => {
@@ -59,6 +59,38 @@ export default function App() {
     if (mode !== 'sideways') return []
     return getSidewaysColumns(input, mapping)
   }, [input, mapping, mode])
+
+  const [copyMsg, setCopyMsg] = useState('')
+
+  function sidewaysTextFromColumns(columns, colSep = '    ') {
+    if (!columns || columns.length === 0) return ''
+    const rows = []
+    const maxLen = columns[0].length
+    for (let i = 0; i < maxLen; i++) {
+      const cells = columns.map((col) => col[i] ?? '')
+      rows.push(cells.join(colSep))
+    }
+    return rows.join('\n')
+  }
+
+  async function handleCopy() {
+    try {
+      let textToCopy = ''
+      if (mode === 'sideways') {
+        textToCopy = sidewaysTextFromColumns(sidewaysColumns)
+      } else {
+        // upside-down
+        textToCopy = convertUpsideDown(input, mapping)
+      }
+      await navigator.clipboard.writeText(textToCopy)
+      setCopyMsg('Copied!')
+      setTimeout(() => setCopyMsg(''), 1500)
+    } catch (e) {
+      console.error('copy failed', e)
+      setCopyMsg('Failed')
+      setTimeout(() => setCopyMsg(''), 1500)
+    }
+  }
 
 // Ensure directionality doesn't break layout by wrapping lines with LRI..PDI
 // LRI = U+2066, PDI = U+2069
@@ -131,15 +163,17 @@ function SidewaysPreview({ columns }) {
 
       <main>
         <section className="converter">
-          <div className="mode-select">
-            <label htmlFor="mode">Mode</label>
-            <select id="mode" value={mode} onChange={(e) => setMode(e.target.value)}>
-              <option value="sideways">Sideways</option>
-              <option value="upside-down">Upside-down</option>
-            </select>
-          </div>
           <div className="pane">
-            <label htmlFor="input">Input (editable)</label>
+            <div className="pane-header">
+              <label htmlFor="input">Input (editable)</label>
+              <div className="pane-controls">
+                <label htmlFor="mode" className="sr-only">Mode</label>
+                <select id="mode" value={mode} onChange={(e) => setMode(e.target.value)}>
+                  <option value="sideways">Sideways</option>
+                  <option value="upside-down">Upside-down</option>
+                </select>
+              </div>
+            </div>
             <textarea
               id="input"
               value={input}
@@ -149,7 +183,15 @@ function SidewaysPreview({ columns }) {
           </div>
 
           <div className="pane">
-            <label htmlFor="output">Output (read-only)</label>
+            <div className="pane-header">
+              <label htmlFor="output">Output (read-only)</label>
+              <div className="output-controls">
+                <button className="copy-btn" onClick={handleCopy} aria-label="Copy output">
+                  Copy
+                </button>
+                <span className="copy-msg">{copyMsg}</span>
+              </div>
+            </div>
             {mode === 'sideways' ? (
               <SidewaysPreview columns={sidewaysColumns} />
             ) : (
@@ -162,7 +204,15 @@ function SidewaysPreview({ columns }) {
       </main>
 
       <footer>
-        <small style={{ textAlign: 'center' }} >Made by <a href="https://github.com/legojrp">legojrp</a>, with help from <a href="https://www.reddit.com/r/Unicode/comments/1kormfj/best_upwardfacingsideways_alphabet/">a reddit post</a> and <a href="https://shapecatcher.com/">this website</a>.</small>
+        <div className="footer-left">
+          <small>
+            Made by <a href="https://github.com/legojrp">legojrp</a>, with help from <a href="https://www.reddit.com/r/Unicode/comments/1kormfj/best_upwardfacingsideways_alphabet/">a reddit post</a> and <a href="https://shapecatcher.com/">this website</a>.
+            &nbsp;Mappings controlled in <code>src/mappings.json</code>
+          </small>
+        </div>
+        <div className="footer-right">
+          <a href="https://github.com/legojrp/Sideways-Text" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
       </footer>
     </div>
   )
