@@ -5,9 +5,21 @@ import mappings from './mappings.json'
 
 function convertWithMapping(input, mapping) {
   if (!input) return ''
+  // If a character isn't in the explicit mapping, but exists in the
+  // `homoglyphs` section of `mappings.json`, pick a random homoglyph.
+  const homoglyphs = mappings?.homoglyphs ?? {}
   let out = ''
   for (const ch of input) {
-    out += mapping?.[ch] ?? ch
+    if (mapping?.[ch] !== undefined) {
+      out += mapping[ch]
+      continue
+    }
+    const pool = homoglyphs?.[ch]
+    if (Array.isArray(pool) && pool.length > 0) {
+      out += pool[Math.floor(Math.random() * pool.length)]
+      continue
+    }
+    out += ch
   }
   return out
 }
@@ -24,8 +36,14 @@ function getSidewaysColumns(input, mapping) {
   if (!input) return []
   const lines = input.split(/\r?\n/)
   // map and reverse each line individually; mapping may return multi-char strings
+  const homoglyphs = mappings?.homoglyphs ?? {}
   const columns = lines.map((line) => {
-    const mapped = [...line].map((ch) => mapping?.[ch] ?? ch)
+    const mapped = [...line].map((ch) => {
+      if (mapping?.[ch] !== undefined) return mapping[ch]
+      const pool = homoglyphs?.[ch]
+      if (Array.isArray(pool) && pool.length > 0) return pool[Math.floor(Math.random() * pool.length)]
+      return ch
+    })
     return mapped.reverse()
   })
 
@@ -46,11 +64,14 @@ export default function App() {
   const [mode, setMode] = useState('sideways') // 'sideways' or 'upside-down'
 
   const mapping = useMemo(() => {
-    return mode === 'upside-down' ? mappings.upsideDown : mappings.sideways
+    if (mode === 'upside-down') return mappings.upsideDown
+    if (mode === 'homoglyphs') return {} // empty mapping -> homoglyphs fallback used
+    return mappings.sideways
   }, [mode])
 
   const output = useMemo(() => {
     if (mode === 'upside-down') return convertUpsideDown(input, mapping)
+    if (mode === 'homoglyphs') return convertWithMapping(input, mapping)
     return null
   }, [input, mapping, mode])
 
@@ -78,9 +99,12 @@ export default function App() {
       let textToCopy = ''
       if (mode === 'sideways') {
         textToCopy = sidewaysTextFromColumns(sidewaysColumns)
-      } else {
+      } else if (mode === 'upside-down') {
         // upside-down
         textToCopy = convertUpsideDown(input, mapping)
+      } else if (mode === 'homoglyphs') {
+        // homoglyphs (random per-char)
+        textToCopy = convertWithMapping(input, mapping)
       }
       await navigator.clipboard.writeText(textToCopy)
       setCopyMsg('Copied!')
@@ -171,6 +195,7 @@ function SidewaysPreview({ columns }) {
                 <select id="mode" value={mode} onChange={(e) => setMode(e.target.value)}>
                   <option value="sideways">Sideways</option>
                   <option value="upside-down">Upside-down</option>
+                  <option value="homoglyphs">Homoglyphs</option>
                 </select>
               </div>
             </div>
